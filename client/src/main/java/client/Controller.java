@@ -16,7 +16,6 @@ import javafx.scene.input.MouseEvent;
 import javafx.scene.layout.HBox;
 import javafx.stage.Modality;
 import javafx.stage.Stage;
-import javafx.stage.WindowEvent;
 
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
@@ -75,17 +74,15 @@ public class Controller implements Initializable {
         authenticated = false;
         Platform.runLater(() -> {
             Stage stage = (Stage) textField.getScene().getWindow();
-            stage.setOnCloseRequest(new EventHandler<WindowEvent>() {
-                @Override
-                public void handle(WindowEvent event) {
-                    System.out.println("bue");
-                    if (socket != null && !socket.isClosed()) {
-                        try {
-                            out.writeUTF("/end");
-                            socket.close();
-                        } catch (IOException e) {
-                            e.printStackTrace();
-                        }
+            stage.setOnCloseRequest(event -> {
+                System.out.println("bue");
+                if (socket != null && !socket.isClosed()) {
+                    try {
+                        out.writeUTF("/end");
+                        textArea.clear();
+                        socket.close();
+                    } catch (IOException e) {
+                        e.printStackTrace();
                     }
                 }
             });
@@ -112,14 +109,17 @@ public class Controller implements Initializable {
                         textArea.appendText(str + "\n");
                     }
 
-                    setTitle("chat 2020 : " + nickname);
 
+                    setTitle("chat 2020 : " + nickname);
+                    FileController fileController = new FileController("history_" + nickname + ".txt");
+                    fileController.loadHistory(textArea);
                     //цикл работы
                     while (true) {
                         String str = in.readUTF();
                         if (str.startsWith("/")) {
                             if (str.equals("/end")) {
                                 setAuthenticated(false);
+                                textArea.clear();
                                 break;
                             }
                             if (str.startsWith("/clientlist ")) {
@@ -138,6 +138,7 @@ public class Controller implements Initializable {
 
                         } else {
                             textArea.appendText(str + "\n");
+                            fileController.saveHistory(str);
                         }
                     }
                 } catch (SocketException e) {
@@ -224,8 +225,8 @@ public class Controller implements Initializable {
         return stage;
     }
 
-    public void tryRegistr(String login, String password, String nickname){
-        String msg = String.format("/reg %s %s %s",login, password, nickname );
+    public void tryRegistr(String login, String password, String nickname) {
+        String msg = String.format("/reg %s %s %s", login, password, nickname);
 
         if (socket == null || socket.isClosed()) {
             connect();
