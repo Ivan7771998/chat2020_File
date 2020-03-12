@@ -6,12 +6,16 @@ import java.io.IOException;
 import java.io.PrintWriter;
 import java.net.ServerSocket;
 import java.net.Socket;
+import java.util.Objects;
 import java.util.Scanner;
 import java.util.Vector;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 
 public class Server {
     private Vector<ClientHandler> clients;
     private AuthService authService;
+    private ExecutorService executorService;
 
     public AuthService getAuthService() {
         return authService;
@@ -19,6 +23,7 @@ public class Server {
 
     public Server() {
         clients = new Vector<>();
+        executorService = Executors.newFixedThreadPool(5);
 //        authService = new SimpleAuthService();
         if (!SQLHandler.connect()) {
             throw new RuntimeException("Не удалось подключиться к БД");
@@ -26,7 +31,7 @@ public class Server {
         authService = new DBAuthServise();
 
         ServerSocket server = null;
-        Socket socket = null;
+        Socket socket;
 
         try {
             server = new ServerSocket(8189);
@@ -35,7 +40,7 @@ public class Server {
             while (true) {
                 socket = server.accept();
                 System.out.println("Клиент подключился");
-                new ClientHandler(socket, this);
+                new ClientHandler(socket, this, executorService);
             }
 
         } catch (IOException e) {
@@ -43,7 +48,8 @@ public class Server {
         } finally {
             SQLHandler.disconnect();
             try {
-                server.close();
+                executorService.shutdown();
+                Objects.requireNonNull(server).close();
             } catch (IOException e) {
                 e.printStackTrace();
             }
