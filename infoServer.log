@@ -1,0 +1,6 @@
+мар 20, 2020 12:50:15 AM server.Server <init>
+INFO: Сервер запустился
+мар 20, 2020 12:50:37 AM server.Server <init>
+INFO: Клиент подключился
+мар 20, 2020 12:51:09 AM server.ClientHandler lambda$new$0
+INFO: Клиент отключился по таймауту

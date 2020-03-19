@@ -6,6 +6,8 @@ import java.io.IOException;
 import java.net.Socket;
 import java.net.SocketTimeoutException;
 import java.util.concurrent.ExecutorService;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 public class ClientHandler {
     Socket socket = null;
@@ -15,9 +17,11 @@ public class ClientHandler {
     ExecutorService executorService;
     private String nick;
     private String login;
+    private Logger logger;
 
-    public ClientHandler(Socket socket, Server server, ExecutorService executorService) {
+    public ClientHandler(Socket socket, Server server, ExecutorService executorService, Logger logger) {
         try {
+            this.logger = logger;
             this.socket = socket;
             this.server = server;
             this.executorService = executorService;
@@ -60,6 +64,7 @@ public class ClientHandler {
                                     nick = newNick;
                                     server.subscribe(this);
                                     System.out.println("Клиент " + nick + " подключился");
+                                    logger.log(Level.INFO,"Клиент " + nick + " подключился");
                                     socket.setSoTimeout(0);
                                     break;
                                 } else {
@@ -110,8 +115,10 @@ public class ClientHandler {
                     }
                 } catch (SocketTimeoutException e) {
                     System.out.println("Клиент отключился по таймауту");
+                    logger.log(Level.INFO,"Клиент отключился по таймауту");
                 } catch (RuntimeException e) {
                     System.out.println("сами вызвали исключение.");
+                    logger.log(Level.INFO,"сами вызвали исключение.");
                 } catch (IOException e) {
                     e.printStackTrace();
                 } finally {
@@ -132,6 +139,7 @@ public class ClientHandler {
                         e.printStackTrace();
                     }
                     System.out.println("Клиент отключился");
+                    logger.log(Level.INFO,"Клиент отключился");
                 }
             });
 

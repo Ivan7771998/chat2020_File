@@ -1,5 +1,7 @@
 package server;
 
+import com.sun.org.slf4j.internal.LoggerFactory;
+
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.io.IOException;
@@ -11,19 +13,22 @@ import java.util.Scanner;
 import java.util.Vector;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.logging.*;
 
 public class Server {
     private Vector<ClientHandler> clients;
     private AuthService authService;
     private ExecutorService executorService;
+    private Logger logger = Logger.getLogger(Server.class.getName());
 
     public AuthService getAuthService() {
         return authService;
     }
 
-    public Server() {
+    public Server() throws IOException {
         clients = new Vector<>();
         executorService = Executors.newFixedThreadPool(5);
+        setUpHandler();
 //        authService = new SimpleAuthService();
         if (!SQLHandler.connect()) {
             throw new RuntimeException("Не удалось подключиться к БД");
@@ -36,11 +41,13 @@ public class Server {
         try {
             server = new ServerSocket(8189);
             System.out.println("Сервер запустился");
+            logger.log(Level.INFO,"Сервер запустился");
 
             while (true) {
                 socket = server.accept();
                 System.out.println("Клиент подключился");
-                new ClientHandler(socket, this, executorService);
+                logger.log(Level.INFO,"Клиент подключился");
+                new ClientHandler(socket, this, executorService, logger);
             }
 
         } catch (IOException e) {
@@ -54,6 +61,13 @@ public class Server {
                 e.printStackTrace();
             }
         }
+    }
+
+    private void setUpHandler() throws IOException {
+        Handler handler =new FileHandler("infoServer.log");
+        handler.setFormatter(new SimpleFormatter());
+        handler.setLevel(Level.ALL);
+        logger.addHandler(handler);
     }
 
     public void broadcastMsg(String nick, String msg) {
